@@ -6,7 +6,6 @@
 
 static yc_coroutine_t main_routine;
 
-static yc_coroutine_t *pre_routine = 0;
 static yc_coroutine_t *cur_routine = 0;
 
 enum {
@@ -43,6 +42,7 @@ yc_coroutine_t *yc_create(yc_co_func_t func, void *param)
     co->state =  READY;
     co->func = func;
     co->param = param;
+    co->parent = 0;
 
     yc_ctx_init(&co->ctx);
 
@@ -56,17 +56,17 @@ void yc_resume(yc_coroutine_t *co)
         yc_ctx_make(&co->ctx, co->bp, coroutine, co);
         co->state = RUNNING;
     }
-    pre_routine = cur_routine;
+    yc_coroutine_t *tmp = cur_routine;
     cur_routine = co;
-    yc_ctx_swap(&pre_routine->ctx , &cur_routine->ctx);
+    co->parent = tmp;
+    yc_ctx_swap(&tmp->ctx , &cur_routine->ctx);
 }
 
 void yc_yield() 
 {
     yc_coroutine_t *tmp = cur_routine;
-    cur_routine = pre_routine;
-    pre_routine = tmp;
-    yc_ctx_swap(&pre_routine->ctx, &cur_routine->ctx);
+    cur_routine = tmp->parent;
+    yc_ctx_swap(&tmp->ctx, &cur_routine->ctx);
 }
 
 void yc_destory(yc_coroutine_t *co)

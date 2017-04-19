@@ -21,6 +21,7 @@ struct yc_coroutine_s  {
     int state;
     yc_co_func_t func;
     void *param;
+    yc_coroutine_t *parent;
 } ;
 
 void yc_init();
